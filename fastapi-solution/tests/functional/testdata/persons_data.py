@@ -1,0 +1,21 @@
+persons_data = [
+    {"id": "c883c2c6-d7a4-4001-8084-e2851904e91a", "full_name": "Nicholas Meyer"},
+    {"id": "5a3d0299-2df2-4070-9fda-65ff4dfa863c", "full_name": "Leonard Nimoy"},
+    {"id": "807ce9c3-6294-485c-803a-1975066f239f", "full_name": "James Doohan"},
+    {"id": "836bb95b-6db8-4418-a110-f41663b1c025", "full_name": "DeForest Kelley"},
+    {"id": "9758b894-57d7-465d-b657-c5803dd5b7f7", "full_name": "William Shatner"},
+    {"id": "24b5b1fb-9931-4964-a0d2-ce664c00c1d5", "full_name": "Jack B. Sowards"},
+    {"id": "58411ec0-c40a-43da-95e3-0adc74b7e7f6", "full_name": "Harve Bennett"},
+    {"id": "6960e2ca-889f-41f5-b728-1e7313e54d6c", "full_name": "Gene Roddenberry"},
+    {"id": "035c4793-4864-45b8-8d4f-b86b454c60b0", "full_name": "Marina Sirtis"},
+    {"id": "57a471b1-09dc-48fd-ba8a-1211015a0110", "full_name": "Patrick Stewart"},
+    {"id": "5bddea2c-8609-499a-a444-77e0142743c0", "full_name": "Jonathan Frakes"},
+    {"id": "fc9f27d2-aaee-46e6-b263-40ec8d2dd355", "full_name": "LeVar Burton"},
+    {"id": "3f123595-ecfb-4740-a1c5-ceab9fc21c23", "full_name": "Anthony Rapp"},
+    {"id": "43bb73ff-0f0e-4169-b708-32a77dc1c50e", "full_name": "Doug Jones"},
+    {"id": "861a3116-7f75-4b7c-b1a1-5efd4936589c", "full_name": "Mary Wiseman"},
+    {"id": "bd2a8ab8-a7bc-45cf-852b-d23cb1cf4b5d", "full_name": "Sonequa Martin-Green"},
+    {"id": "82b7dffe-6254-4598-b6ef-5be747193946", "full_name": "Alex Kurtzman"},
+    {"id": "5ac68e18-a84c-4a98-a2ba-85d1bc85e0a4", "full_name": "William A. Wellman"},
+    {"id": "e05c7d9c-3572-4ac5-83db-c0e3294b4f23", "full_name": "William Campbell"}
+]
