@@ -6,9 +6,25 @@ from fastapi import FastAPI
 from fastapi.responses import ORJSONResponse
 from redis.asyncio import Redis
 
-from internal.adapters.input.http.v1.films.routes import FilmHandler
-from internal.adapters.input.http.v1.genres.routes import GenreHandler
-from internal.adapters.input.http.v1.persons.routes import PersonHandler
+import internal.ports.input.films.get_film_by_id_handler \
+    as film_by_id_handler
+import internal.ports.input.films.get_films_by_params_handler \
+    as films_by_params_handler
+import internal.ports.input.films.get_films_by_search_handler \
+    as films_by_search_handler
+import internal.ports.input.genres.get_all_genres_handler \
+    as all_genres_handler
+import internal.ports.input.genres.get_genre_by_id_handler \
+    as genre_by_id_handler
+import internal.ports.input.persons.get_person_by_id_handler \
+    as person_by_id_handler
+import internal.ports.input.persons.get_persons_by_search_handler \
+    as persons_by_search_handler
+import internal.ports.output.films_repository as films_repository
+import internal.ports.output.genres_repository as genres_repository
+import internal.ports.output.persons_repository as persons_repository
+import internal.ports.output.cache as cache
+from internal.adapters.input.http import base_exception_handlers
 from internal.adapters.output.elasticsearch.film.repository import (
     ElasticFilmRepository,
 )
@@ -18,39 +34,45 @@ from internal.adapters.output.elasticsearch.genre.repository import (
 from internal.adapters.output.elasticsearch.person.repository import (
     ElasticPersonRepository,
 )
+from internal.adapters.output.redis.cache import RedisCache
 from internal.core.application.usecases.queries.films.get_film_by_id_query import (
-    GetFilmsByIdHandler,
+    GetFilmsByIdUseCase,
 )
 from internal.core.application.usecases.queries.films.get_films_by_params_query import (
-    GetFilmsByParamsHandler,
+    GetFilmsByParamsUseCase,
 )
 from internal.core.application.usecases.queries.films.get_films_by_search_query import (
-    GetFilmsBySearchHandler,
+    GetFilmsBySearchUseCase,
 )
 from internal.core.application.usecases.queries.genres.get_all_genres_query import (
-    GetAllGenresHandler,
+    GetAllGenresUseCase,
 )
 from internal.core.application.usecases.queries.genres.get_genre_by_id_query import (
-    GetGenreByIdHandler,
+    GetGenreByIdUseCase,
 )
 from internal.core.application.usecases.queries.persons.get_person_by_id_query import (
-    GetPersonByIdHandler,
+    GetPersonByIdUseCase,
 )
-from internal.core.application.usecases.queries.persons.search_persons_query import (
-    SearchPersonsHandler,
+from internal.core.application.usecases.queries.persons.get_persons_by_search_query import (
+    GetPersonsBySearchUseCase,
 )
-from internal.infrastructure.config import Settings
-from internal.infrastructure.exception_handlers import setup_exception_handlers
-from internal.infrastructure.logger import LOGGING
-
-logging.config.dictConfig(LOGGING)
+from internal.infrastructure.app_config import Settings
+from internal.infrastructure.logger_config import LOGGING
+from internal.adapters.input.http.v1.films import routes as films_routes
+from internal.adapters.input.http.v1.genres import routes as genres_routes
+from internal.adapters.input.http.v1.persons import routes as persons_routes
 
 
 def create_app(settings: Settings = Settings()) -> FastAPI:
-    redis_client = Redis(host=settings.redis_host, port=settings.redis_port)
+    logging.config.dictConfig(LOGGING)
+
+    redis_client = Redis(host=settings.redis_host,
+                         port=settings.redis_port)
     es_client = AsyncElasticsearch(
         hosts=[
-            f"{settings.elastic_schema}{settings.elastic_host}:{settings.elastic_port}"
+            f"{settings.elastic_schema}"
+            f"{settings.elastic_host}:"
+            f"{settings.elastic_port}"
         ]
     )
 
@@ -65,40 +87,29 @@ def create_app(settings: Settings = Settings()) -> FastAPI:
             logging.info("Application shutdown")
 
     # Repositories
-    film_repository = ElasticFilmRepository(es_client)
-    genre_repository = ElasticGenreRepository(es_client)
-    person_repository = ElasticPersonRepository(es_client)
+    films_repository.instance = ElasticFilmRepository(es_client)
+    genres_repository.instance = ElasticGenreRepository(es_client)
+    persons_repository.instance = ElasticPersonRepository(es_client)
+
+    cache.instance = RedisCache(redis_client, settings.project_name)
 
     # Use Cases
-    get_film_by_id_uc = GetFilmsByIdHandler(film_repository)
-    get_films_by_params_uc = GetFilmsByParamsHandler(film_repository)
-    get_films_by_search_uc = GetFilmsBySearchHandler(film_repository)
+    film_by_id_handler.instance = GetFilmsByIdUseCase(
+        films_repository.instance)
+    films_by_params_handler.instance = GetFilmsByParamsUseCase(
+        films_repository.instance)
+    films_by_search_handler.instance = GetFilmsBySearchUseCase(
+        films_repository.instance)
 
-    get_all_genres_uc = GetAllGenresHandler(genre_repository)
-    get_genre_by_id_uc = GetGenreByIdHandler(genre_repository)
+    all_genres_handler.instance = GetAllGenresUseCase(
+        genres_repository.instance)
+    genre_by_id_handler.instance = GetGenreByIdUseCase(
+        genres_repository.instance)
 
-    get_person_by_id_uc = GetPersonByIdHandler(person_repository)
-    search_persons_uc = SearchPersonsHandler(person_repository)
-
-    # Handlers
-    film_handler = FilmHandler(
-        app_title=settings.project_name,
-        get_film_by_search=get_films_by_search_uc,
-        get_film_by_params=get_films_by_params_uc,
-        get_film_by_id=get_film_by_id_uc,
-        redis=redis_client,
-    )
-
-    genre_handler = GenreHandler(
-        get_all_genres=get_all_genres_uc,
-        get_genre_by_id=get_genre_by_id_uc,
-    )
-
-    person_handler = PersonHandler(
-        get_person_by_id=get_person_by_id_uc,
-        search_persons=search_persons_uc,
-        get_films_by_params=get_films_by_params_uc,
-    )
+    person_by_id_handler.instance = GetPersonByIdUseCase(
+        persons_repository.instance)
+    persons_by_search_handler.instance = GetPersonsBySearchUseCase(
+        persons_repository.instance)
 
     app = FastAPI(
         title=settings.project_name,
@@ -109,11 +120,11 @@ def create_app(settings: Settings = Settings()) -> FastAPI:
         lifespan=lifespan,
     )
 
-    setup_exception_handlers(app)
+    base_exception_handlers.setup_exception_handlers(app)
 
-    app.include_router(film_handler.router, prefix="/api/v1")
-    app.include_router(genre_handler.router, prefix="/api/v1")
-    app.include_router(person_handler.router, prefix="/api/v1")
+    app.include_router(films_routes.router, prefix="/api/v1")
+    app.include_router(genres_routes.router, prefix="/api/v1")
+    app.include_router(persons_routes.router, prefix="/api/v1")
 
     return app
 

@@ -5,7 +5,7 @@ from elasticsearch import AsyncElasticsearch
 
 from internal.adapters.output.elasticsearch.base_repository import ElasticBaseRepository
 from internal.core.domain.models.genre import Genre
-from internal.ports.genres_repository import GenreRepository
+from internal.ports.output.genres_repository import GenreRepository
 
 
 class ElasticGenreRepository(ElasticBaseRepository[Genre], GenreRepository):

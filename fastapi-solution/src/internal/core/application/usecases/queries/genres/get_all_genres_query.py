@@ -1,21 +1,12 @@
-from dataclasses import dataclass
-from typing import Protocol, List
+from typing import List
 
 from internal.core.domain.models.genre import Genre
-from internal.ports.genres_repository import GenreRepository
+from internal.ports.input.genres.get_all_genres_handler import \
+    AllGenresHandlerProtocol, GetAllGenres
+from internal.ports.output.genres_repository import GenreRepository
 
 
-@dataclass(kw_only=True)
-class GetAllGenres:
-    pass
-
-
-class GetAllGenresHandlerProtocol(Protocol):
-    async def handle(self, query: GetAllGenres) -> List[Genre]:
-        pass
-
-
-class GetAllGenresHandler:
+class GetAllGenresUseCase(AllGenresHandlerProtocol):
     def __init__(self, genre_repository: GenreRepository):
         self.genre_repository = genre_repository
 

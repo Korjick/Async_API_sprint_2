@@ -13,7 +13,7 @@ from internal.core.domain.models.genre import Genre
 from internal.core.domain.models.person import Person
 from internal.pkg.errors import ObjectNotFoundError
 from internal.pkg.pagination import PaginatedResult
-from internal.ports.films_repository import (
+from internal.ports.output.films_repository import (
     FilmSearchParams,
     FilmQueryParams,
     FilmRepository,

@@ -2,7 +2,7 @@ from typing import List, Optional, Union
 
 from pydantic import BaseModel, Field, ConfigDict
 
-from internal.adapters.input.http.base import PaginatedResponse, \
+from internal.adapters.input.http.base_schemas import PaginatedResponse, \
     PaginationRequest
 from internal.adapters.input.http.v1.persons.schemas import Person
 from internal.core.domain.models.film import SortBy, Film

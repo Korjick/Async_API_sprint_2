@@ -1,52 +1,36 @@
 import uuid
-from typing import List
+from typing import List, Annotated
 
-from fastapi import APIRouter
+from fastapi import APIRouter, Depends
 
 from internal.adapters.input.http.v1.genres.schemas import GenreResponse
-from internal.core.application.usecases.queries.genres.get_all_genres_query import (
-    GetAllGenresHandlerProtocol,
-    GetAllGenres,
-)
-from internal.core.application.usecases.queries.genres.get_genre_by_id_query import (
-    GetGenreByIdHandlerProtocol,
-    GetGenreById,
-)
+from internal.ports.input.genres.get_all_genres_handler import \
+    AllGenresHandlerProtocol, get_instance as all_genres_handler, GetAllGenres
+from internal.ports.input.genres.get_genre_by_id_handler import \
+    GenreByIdHandlerProtocol, get_instance as genre_by_id_handler, GetGenreById
+
+router = APIRouter(prefix='/genres', tags=['Жанры'])
 
 
-class GenreHandler:
-    def __init__(
-            self,
-            get_all_genres: GetAllGenresHandlerProtocol,
-            get_genre_by_id: GetGenreByIdHandlerProtocol,
-    ):
-        self.get_all_genres = get_all_genres
-        self.get_genre_by_id = get_genre_by_id
-        self.router = APIRouter(prefix='/genres', tags=['Жанры'])
-
-        self.router.add_api_route(
-            '/',
-            self.genre_list,
-            methods=["GET"],
+@router.get("/",
             response_model=List[GenreResponse],
-            summary="Получить список жанров",
-        )
-        self.router.add_api_route(
-            '/{genre_id}',
-            self.genre_detail,
-            methods=["GET"],
+            summary="Получить список жанров")
+async def genre_list(
+        all_genres: Annotated[
+            AllGenresHandlerProtocol, Depends(all_genres_handler)]) \
+        -> List[GenreResponse]:
+    query = GetAllGenres()
+    genres = await all_genres.handle(query)
+    return [GenreResponse.from_domain(genre) for genre in genres]
+
+
+@router.get("/{genre_id}",
             response_model=GenreResponse,
-            summary="Получить жанр по id",
-        )
-
-    async def genre_list(self) -> List[GenreResponse]:
-        """Получить список доступных жанров"""
-        query = GetAllGenres()
-        genres = await self.get_all_genres.handle(query)
-        return [GenreResponse.from_domain(genre) for genre in genres]
-
-    async def genre_detail(self, genre_id: uuid.UUID) -> GenreResponse:
-        """Получить жанр по uuid"""
-        query = GetGenreById(id=genre_id)
-        genre = await self.get_genre_by_id.handle(query)
-        return GenreResponse.from_domain(genre)
+            summary="Получить жанр по id")
+async def genre_detail(genre_id: uuid.UUID,
+                       genre_by_id: Annotated[
+                           GenreByIdHandlerProtocol, Depends(genre_by_id_handler)]) \
+        -> GenreResponse:
+    query = GetGenreById(id=genre_id)
+    genre = await genre_by_id.handle(query)
+    return GenreResponse.from_domain(genre)

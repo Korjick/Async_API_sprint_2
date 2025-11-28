@@ -8,7 +8,7 @@ from internal.adapters.output.elasticsearch.base_repository import \
 from internal.core.domain.models.film import Film
 from internal.core.domain.models.person import Person
 from internal.pkg.pagination import PaginatedResult
-from internal.ports.persons_repository import PersonRepository
+from internal.ports.output.persons_repository import PersonRepository
 
 
 class ElasticPersonRepository(ElasticBaseRepository[Person], PersonRepository):

@@ -10,3 +10,12 @@ class GenreRepository(Protocol):
 
     async def get_all_genres(self) -> List[Genre]:
         pass
+
+
+instance: Optional[GenreRepository] = None
+
+
+def get_instance() -> GenreRepository:
+    if instance is None:
+        raise RuntimeError("Genre repository is not initialized")
+    return instance

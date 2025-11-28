@@ -11,7 +11,7 @@ from command.app.main import create_app
 from functional.testdata.films_data import films_data
 from functional.testdata.genres_data import genres_data
 from functional.testdata.persons_data import persons_data
-from internal.infrastructure.config import Settings
+from internal.infrastructure.app_config import Settings
 
 
 @pytest.fixture(scope='session')

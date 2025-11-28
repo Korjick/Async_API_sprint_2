@@ -1,5 +1,5 @@
 import uuid
-from typing import Protocol, List
+from typing import Protocol, List, Optional
 
 from internal.core.domain.models.person import Person
 from internal.pkg.pagination import PaginatedResult
@@ -15,3 +15,12 @@ class PersonRepository(Protocol):
     async def search_by_name(self, query: str, page: int, per_page: int) \
             -> PaginatedResult[Person]:
         pass
+
+
+instance: Optional[PersonRepository] = None
+
+
+def get_instance() -> PersonRepository:
+    if instance is None:
+        raise RuntimeError("Person repository is not initialized")
+    return instance

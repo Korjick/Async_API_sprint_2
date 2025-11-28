@@ -1,104 +1,88 @@
 import uuid
 from typing import Annotated
 
-from fastapi import APIRouter, Depends, HTTPException, status
-from redis.asyncio import Redis
+from fastapi import APIRouter, Depends
 
+from internal.ports.input.films.get_film_by_id_handler import \
+    FilmByIdHandlerProtocol, get_instance as film_by_id_handler, GetFilmById
+from internal.ports.input.films.get_films_by_params_handler import \
+    get_instance as films_by_params_handler, FilmsByParamsHandlerProtocol, \
+    GetFilmsByParams
 from internal.adapters.input.http.v1.films.schemas import FilmShortResponse, \
     FilmDetailResponse, FilmListResponse, FilmSearchByQueryRequest, \
     FilmSearchByParamsRequest
-from internal.infrastructure.redis import \
-    cache_response as redis_cache_response
-from internal.core.application.usecases.queries.films.get_film_by_id_query import \
-    GetFilmById, GetFilmByIdHandlerProtocol
-from internal.core.application.usecases.queries.films.get_films_by_params_query import \
-    GetFilmsByParams, GetFilmsByParamsHandlerProtocol
-from internal.core.application.usecases.queries.films.get_films_by_search_query import \
-    GetFilmsBySearch, GetFilmsBySearchHandlerProtocol
+from internal.ports.output.cache import cache_decorator
+from internal.ports.input.films.get_films_by_search_handler import \
+    FilmsBySearchHandlerProtocol, get_instance as films_by_search_handler, \
+    GetFilmsBySearch
 
 CACHE_EXPIRE_IN_SECONDS = 60 * 5
 
+router = APIRouter(prefix='/films', tags=['Фильмы'])
 
-class FilmHandler:
-    def __init__(self,
-                 app_title: str,
-                 get_film_by_search: GetFilmsBySearchHandlerProtocol,
-                 get_film_by_id: GetFilmByIdHandlerProtocol,
-                 get_film_by_params: GetFilmsByParamsHandlerProtocol,
-                 redis: Redis) -> None:
-        self.app_title = app_title
-        self.redis = redis
-        self.get_film_by_search = get_film_by_search
-        self.get_film_by_id = get_film_by_id
-        self.get_film_by_params = get_film_by_params
 
-        self.router = APIRouter(prefix='/films', tags=['Фильмы'])
-        self.router.add_api_route('/search',
-                                  endpoint=self.films_search,
-                                  methods=["GET"],
-                                  response_model=FilmListResponse,
-                                  summary="Вывод списка кинопроизведений с поиском по названию и описанию и сортировкой")
-        self.router.add_api_route('/{film_id}',
-                                  endpoint=self.film_details,
-                                  methods=["GET"],
-                                  response_model=FilmDetailResponse,
-                                  summary="Поиск кинопроизведения по id"
-                                  )
-        self.router.add_api_route('/',
-                                  endpoint=self.films_list,
-                                  methods=["GET"],
-                                  response_model=FilmListResponse,
-                                  summary="Вывод списка кинопроизведений с фильтрацией по жанрам и сортировкой")
-
-    @redis_cache_response(
-        expire_sec=CACHE_EXPIRE_IN_SECONDS,
-        response_model=FilmListResponse
+@router.get("/search",
+            response_model=FilmListResponse,
+            summary="Вывод списка кинопроизведений с поиском по названию и описанию и сортировкой")
+@cache_decorator(
+    expire_sec=CACHE_EXPIRE_IN_SECONDS,
+    response_model=FilmListResponse
+)
+async def films_search(
+        search_params: Annotated[FilmSearchByQueryRequest, Depends()],
+        films_by_search: Annotated[
+            FilmsBySearchHandlerProtocol, Depends(
+                films_by_search_handler)]) -> FilmListResponse:
+    params = GetFilmsBySearch(page=search_params.page,
+                              per_page=search_params.per_page,
+                              sort=search_params.sort,
+                              search_query=search_params.query)
+    result = await films_by_search.handle(params)
+    return FilmListResponse(
+        page=result.page,
+        per_page=result.per_page,
+        total=result.total,
+        items=[FilmShortResponse.from_domain(film) for film in result.items],
     )
-    async def films_search(self,
-                           search_params: Annotated[
-                               FilmSearchByQueryRequest, Depends()]) \
-            -> FilmListResponse:
-        params = GetFilmsBySearch(page=search_params.page,
-                                  per_page=search_params.per_page,
-                                  sort=search_params.sort,
-                                  search_query=search_params.query)
-        result = await self.get_film_by_search.handle(params)
 
-        return FilmListResponse(
-            page=result.page,
-            per_page=result.per_page,
-            total=result.total,
-            items=[FilmShortResponse.from_domain(film) for film in result.items],
-        )
 
-    @redis_cache_response(
-        expire_sec=CACHE_EXPIRE_IN_SECONDS,
-        response_model=FilmDetailResponse
+@router.get("/{film_id}",
+            response_model=FilmDetailResponse,
+            summary="Поиск кинопроизведения по id")
+@cache_decorator(
+    expire_sec=CACHE_EXPIRE_IN_SECONDS,
+    response_model=FilmDetailResponse
+)
+async def film_details(film_id: uuid.UUID,
+                       films_by_id: Annotated[
+                           FilmByIdHandlerProtocol, Depends(film_by_id_handler)]) \
+        -> FilmDetailResponse:
+    film = await films_by_id.handle(GetFilmById(id=film_id))
+    detail = FilmDetailResponse.from_domain(film)
+    return detail
+
+
+@router.get("/",
+            response_model=FilmListResponse,
+            summary="Вывод списка кинопроизведений с фильтрацией по жанрам и сортировкой")
+@cache_decorator(
+    expire_sec=CACHE_EXPIRE_IN_SECONDS,
+    response_model=FilmListResponse
+)
+async def films_list(
+        search_params: Annotated[FilmSearchByParamsRequest, Depends()],
+        films_by_params: Annotated[
+            FilmsByParamsHandlerProtocol, Depends(films_by_params_handler)]) \
+        -> FilmListResponse:
+    params = GetFilmsByParams(page=search_params.page,
+                              per_page=search_params.per_page,
+                              sort=search_params.sort,
+                              genre=search_params.genre,
+                              person=search_params.person)
+    result = await films_by_params.handle(params)
+    return FilmListResponse(
+        page=result.page,
+        per_page=result.per_page,
+        total=result.total,
+        items=[FilmShortResponse.from_domain(film) for film in result.items],
     )
-    async def film_details(self, film_id: uuid.UUID) -> FilmDetailResponse:
-        film = await self.get_film_by_id.handle(GetFilmById(id=film_id))
-        detail = FilmDetailResponse.from_domain(film)
-        print("film_details: film.genres=", film.genres, "detail.genres=", detail.genres)
-        return detail
-
-    @redis_cache_response(
-        expire_sec=CACHE_EXPIRE_IN_SECONDS,
-        response_model=FilmListResponse
-    )
-    async def films_list(self,
-                         search_params: Annotated[
-                             FilmSearchByParamsRequest, Depends()]) \
-            -> FilmListResponse:
-        params = GetFilmsByParams(page=search_params.page,
-                                  per_page=search_params.per_page,
-                                  sort=search_params.sort,
-                                  genre=search_params.genre,
-                                  person=search_params.person)
-        result = await self.get_film_by_params.handle(params)
-
-        return FilmListResponse(
-            page=result.page,
-            per_page=result.per_page,
-            total=result.total,
-            items=[FilmShortResponse.from_domain(film) for film in result.items],
-        )

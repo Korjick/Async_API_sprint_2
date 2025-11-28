@@ -30,3 +30,12 @@ class FilmRepository(Protocol):
 
     async def get_film_by_id(self, film_id: uuid.UUID) -> Film:
         pass
+
+
+instance: Optional[FilmRepository] = None
+
+
+def get_instance() -> FilmRepository:
+    if instance is None:
+        raise RuntimeError("Film repository is not initialized")
+    return instance
