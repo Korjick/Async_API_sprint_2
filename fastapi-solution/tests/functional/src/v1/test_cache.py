@@ -1,6 +1,7 @@
 import pytest
 import json
 from redis.asyncio import Redis
+from http import HTTPStatus
 
 from src.internal.infrastructure.app_config import Settings
 pytestmark = pytest.mark.asyncio
@@ -19,7 +20,7 @@ class TestCache:
         endpoint = 'films/search'
 
         response1 = await make_get_request(1, endpoint, query_params)
-        assert response1['status'] == 200
+        assert response1['status'] == HTTPStatus.OK
 
         keys = await redis.keys("*")
         assert len(keys) > 0, "Ключ должен появиться в Redis после запроса"
@@ -33,7 +34,7 @@ class TestCache:
         assert len(cached_data['items']) == len(response1['body']['items'])
 
         response2 = await make_get_request(1, endpoint, query_params)
-        assert response2['status'] == 200
+        assert response2['status'] == HTTPStatus.OK
         assert response1['body'] == response2['body']
 
         await redis.close()
@@ -49,7 +50,7 @@ class TestCache:
         endpoint = f'films/{film_id}'
 
         response1 = await make_get_request(1, endpoint)
-        assert response1['status'] == 200
+        assert response1['status'] == HTTPStatus.OK
 
         keys = await redis.keys("*")
         assert len(keys) > 0
