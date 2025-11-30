@@ -16,6 +16,8 @@ import internal.ports.input.genres.get_all_genres_handler \
     as all_genres_handler
 import internal.ports.input.genres.get_genre_by_id_handler \
     as genre_by_id_handler
+import internal.ports.input.persons.get_all_persons_handler \
+    as all_persons_handler
 import internal.ports.input.persons.get_person_by_id_handler \
     as person_by_id_handler
 import internal.ports.input.persons.get_persons_by_search_handler \
@@ -49,6 +51,9 @@ from internal.core.application.usecases.queries.genres.get_all_genres_query impo
 )
 from internal.core.application.usecases.queries.genres.get_genre_by_id_query import (
     GetGenreByIdUseCase,
+)
+from internal.core.application.usecases.queries.persons.get_all_persons_query import (
+    GetAllPersonUseCase,
 )
 from internal.core.application.usecases.queries.persons.get_person_by_id_query import (
     GetPersonByIdUseCase,
@@ -106,6 +111,8 @@ def create_app(settings: Settings = Settings()) -> FastAPI:
     genre_by_id_handler.instance = GetGenreByIdUseCase(
         genres_repository.instance)
 
+    all_persons_handler.instance = GetAllPersonUseCase(
+        persons_repository.instance)
     person_by_id_handler.instance = GetPersonByIdUseCase(
         persons_repository.instance)
     persons_by_search_handler.instance = GetPersonsBySearchUseCase(

@@ -10,6 +10,7 @@ from internal.adapters.input.http.v1.persons.schemas import (
     PersonDetailResponse,
     PersonFilmResponse,
     PersonListResponse,
+    PersonShortResponse,
 )
 from internal.core.domain.models.film import Film, SortBy
 from internal.ports.input.films.get_films_by_params_handler import \
@@ -21,6 +22,9 @@ from internal.ports.input.persons.get_person_by_id_handler import \
 from internal.ports.input.persons.get_persons_by_search_handler import \
     PersonsBySearchHandlerProtocol, get_instance as persons_by_search_handler, \
     SearchPersons
+from internal.ports.input.persons.get_all_persons_handler import \
+    AllPersonsHandlerProtocol, get_instance as all_persons_handler, \
+    GetAllPersons
 
 router = APIRouter(prefix='/persons', tags=['Персоны'])
 
@@ -150,6 +154,18 @@ List[FilmShortResponse]:
     films_result = await films_by_params.handle(films_query)
 
     return [FilmShortResponse.from_domain(film) for film in films_result.items]
+
+
+@router.get('/',
+            response_model=List[PersonShortResponse],
+            summary="Получить список персон")
+async def person_details(all_persons: Annotated[
+                        AllPersonsHandlerProtocol, Depends(all_persons_handler)]) \
+                    -> List[PersonShortResponse]:
+    """Получение полного списка персон"""
+    query = GetAllPersons()
+    persons = await all_persons.handle(query)
+    return [PersonShortResponse.from_domain(person) for person in persons]
 
 
 def _get_roles(person_id: uuid.UUID, film: Film) -> List[str]:
