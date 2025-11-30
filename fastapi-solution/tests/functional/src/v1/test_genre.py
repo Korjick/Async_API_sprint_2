@@ -1,7 +1,9 @@
 import pytest
+from http import HTTPStatus
+
+pytestmark = pytest.mark.asyncio
 
 
-@pytest.mark.asyncio
 class TestGenreDetails:
     """Тесты для деталей жанра по ID (API v1)"""
 
@@ -12,7 +14,7 @@ class TestGenreDetails:
 
         response = await make_get_request(1, f'genres/{genre_id}')
 
-        assert response['status'] == 200
+        assert response['status'] == HTTPStatus.OK
         assert response['body']['id'] == str(genre_id)
         assert response['body']['name'] == genre['name']
 
@@ -21,10 +23,10 @@ class TestGenreDetails:
         non_existent_uuid = "00000000-0000-0000-0000-000000000000"
         response = await make_get_request(1, f'genres/{non_existent_uuid}')
 
-        assert response['status'] == 404
+        assert response['status'] == HTTPStatus.NOT_FOUND
 
 
-@pytest.mark.asyncio
+
 class TestGenreList:
     """Тесты для списка жанров (API v1)"""
 
@@ -32,7 +34,7 @@ class TestGenreList:
         """Получить список жанров"""
         response = await make_get_request(1, 'genres/')
 
-        assert response['status'] == 200
+        assert response['status'] == HTTPStatus.OK
         assert len(response['body']) == len(genres_test_data)
 
         expected_ids = set(str(data['id']) for data in genres_test_data)

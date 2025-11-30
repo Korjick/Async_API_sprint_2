@@ -1,8 +1,8 @@
 import pytest
-from internal.adapters.input.http.v1.films.schemas import FilmShortResponse
+from http import HTTPStatus
+pytestmark = pytest.mark.asyncio
 
 
-@pytest.mark.asyncio
 class TestFilmsSearch:
     """Тесты для поиска фильмов (API v1)"""
 
@@ -11,7 +11,7 @@ class TestFilmsSearch:
         response = await make_get_request(1, 'films/search',
                                           {'query': 'discovery'})
 
-        assert response['status'] == 200
+        assert response['status'] == HTTPStatus.OK
         assert len(response['body']['items']) > 0
         assert 'discovery' in response['body']['items'][0]['title'].lower()
 
@@ -20,7 +20,7 @@ class TestFilmsSearch:
         response = await make_get_request(1, 'films/search',
                                           {'query': 'Starfleet'})
 
-        assert response['status'] == 200
+        assert response['status'] == HTTPStatus.OK
         assert len(response['body']['items']) > 0
 
     async def test_search_no_result(self, make_get_request):
@@ -28,7 +28,7 @@ class TestFilmsSearch:
         response = await make_get_request(1, 'films/search',
                                           {'query': 'CatchMeIfYouCan'})
 
-        assert response['status'] == 200
+        assert response['status'] == HTTPStatus.OK
         assert len(response['body']['items']) == 0
         assert response['body']['total'] == 0
 
@@ -37,13 +37,13 @@ class TestFilmsSearch:
         response = await make_get_request(1, 'films/search', {'page': 2,
                                                               'per_page': 10,
                                                               'query': 'Test'})
-        assert response['status'] == 200
+        assert response['status'] == HTTPStatus.OK
         assert len(response['body']['items']) == 10
         assert response['body']['page'] == 2
         assert response['body']['per_page'] == 10
 
 
-@pytest.mark.asyncio
+
 class TestFilmsDetails:
     """Тесты для деталей фильма по ID (API v1)"""
 

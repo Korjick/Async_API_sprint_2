@@ -2,10 +2,10 @@ import pytest
 import json
 from redis.asyncio import Redis
 
-from internal.infrastructure.app_config import Settings
+from src.internal.infrastructure.app_config import Settings
+pytestmark = pytest.mark.asyncio
 
 
-@pytest.mark.asyncio
 class TestCache:
 
     async def test_films_search_cache(self, make_get_request,
