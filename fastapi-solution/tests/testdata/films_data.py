@@ -1,7 +1,7 @@
 import uuid
 import datetime
 
-from functional.testdata.genres_data import genres_data
+from testdata.genres_data import genres_data
 
 
 def _build_genre_index() -> dict[str, str]:

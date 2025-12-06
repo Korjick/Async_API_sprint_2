@@ -8,9 +8,9 @@ from testcontainers.elasticsearch import ElasticSearchContainer
 from testcontainers.redis import RedisContainer
 
 from src.command.app.main import create_app
-from functional.testdata.films_data import films_data
-from functional.testdata.genres_data import genres_data
-from functional.testdata.persons_data import persons_data
+from testdata.films_data import films_data
+from testdata.genres_data import genres_data
+from testdata.persons_data import persons_data
 from src.internal.infrastructure.app_config import Settings
 
 

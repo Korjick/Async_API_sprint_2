@@ -1,6 +1,3 @@
-import uuid
-import datetime
-
 genres_data = [
     {"id": "4ece9b21-5573-4ef5-be13-9359424784d9", "name": "Action", "description": ""},
     {"id": "120a21cf-9097-479e-904a-13dd7198c1dd", "name": "Adventure", "description": ""},
