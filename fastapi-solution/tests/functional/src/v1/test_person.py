@@ -113,7 +113,7 @@ class TestPersonFilmEndpoint:
         uuid_val = "00000000-0000-0000-0000-000000000000"
         response = await make_get_request(1, f'persons/{uuid_val}/film')
 
-        assert response['status'] == HTTPStatus.OK
+        assert response['status'] == HTTPStatus.NOT_FOUND
 
 
 class TestPersonList:

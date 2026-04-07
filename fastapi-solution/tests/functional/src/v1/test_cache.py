@@ -3,7 +3,7 @@ import json
 from redis.asyncio import Redis
 from http import HTTPStatus
 
-from src.internal.infrastructure.app_config import Settings
+from content_api.internal.infrastructure.app_config import Settings
 pytestmark = pytest.mark.asyncio
 
 

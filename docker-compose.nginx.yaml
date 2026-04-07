@@ -1,36 +1,4 @@
-version: '3.9'
-
 services:
-  es_restore:
-    build:
-      context: etl
-      dockerfile: Dockerfile
-    env_file:
-      - ./etl/.env
-    depends_on:
-      elasticsearch:
-        condition: service_healthy
-
-  fastapi:
-    build:
-      context: fastapi-solution
-      dockerfile: Dockerfile
-      args:
-        WORKER_COUNT: 4
-    expose:
-      - "8000"
-    env_file:
-      - ./fastapi-solution/.env
-    depends_on:
-      redis:
-        condition: service_healthy
-      elasticsearch:
-        condition: service_healthy
-      es_restore:
-        condition: service_completed_successfully
-    volumes:
-      - static_volume:/var/www/static
-
   nginx:
     image: nginx:latest
     volumes:
@@ -42,35 +10,3 @@ services:
         condition: service_started
     ports:
       - "80:80"
-#      - "443:443"
-
-  redis:
-    image: redis:8.2.2-alpine
-    volumes:
-      - redis_data:/usr/share/redis/data
-    restart: unless-stopped
-    healthcheck:
-      test: [ "CMD", "redis-cli", "ping" ]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-
-  elasticsearch:
-    image: elasticsearch:8.19.7
-    environment:
-      - discovery.type=single-node
-      - xpack.security.enabled=false
-      - ES_JAVA_OPTS=-Xms512m -Xmx512m
-    volumes:
-      - es_data:/usr/share/elasticsearch/data
-    restart: unless-stopped
-    healthcheck:
-      test: [ "CMD-SHELL", "curl --silent --fail localhost:9200/_cluster/health || exit 1" ]
-      interval: 30s
-      timeout: 30s
-      retries: 3
-
-volumes:
-  es_data:
-  redis_data:
-  static_volume:

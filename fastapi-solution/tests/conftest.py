@@ -7,11 +7,11 @@ from elasticsearch.helpers import async_bulk
 from testcontainers.elasticsearch import ElasticSearchContainer
 from testcontainers.redis import RedisContainer
 
-from src.command.app.main import create_app
+from content_api.command.app.main import create_app
 from testdata.films_data import films_data
 from testdata.genres_data import genres_data
 from testdata.persons_data import persons_data
-from src.internal.infrastructure.app_config import Settings
+from content_api.internal.infrastructure.app_config import Settings
 
 
 @pytest.fixture(scope='session')

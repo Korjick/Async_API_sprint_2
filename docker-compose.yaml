@@ -1,0 +1,99 @@
+services:
+  es_restore:
+    build:
+      context: etl
+      dockerfile: Dockerfile
+    env_file:
+      - ./etl/.env
+    depends_on:
+      elasticsearch:
+        condition: service_healthy
+
+  fastapi:
+    build:
+      context: fastapi-solution
+      dockerfile: Dockerfile
+      args:
+        WORKER_COUNT: 4
+    expose:
+      - "8000"
+    ports:
+      - "8000:8000"
+    env_file:
+      - ./fastapi-solution/.env
+    depends_on:
+      redis:
+        condition: service_healthy
+      elasticsearch:
+        condition: service_healthy
+      es_restore:
+        condition: service_completed_successfully
+      jaeger:
+        condition: service_started
+    volumes:
+      - static_volume:/var/www/static
+    environment:
+      OTEL_EXPORTER_OTLP_ENDPOINT: http://jaeger:4317
+      OTEL_ENVIRONMENT: production
+    restart: unless-stopped
+
+  redis:
+    image: redis:8.2.2-alpine
+    volumes:
+      - redis_data:/usr/share/redis/data
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  elasticsearch:
+    image: elasticsearch:8.19.7
+    environment:
+      - discovery.type=single-node
+      - xpack.security.enabled=false
+      - ES_JAVA_OPTS=-Xms512m -Xmx512m
+    volumes:
+      - es_data:/usr/share/elasticsearch/data
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "curl --silent --fail localhost:9200/_cluster/health || exit 1"]
+      interval: 30s
+      timeout: 30s
+      retries: 3
+
+  loki:
+    image: grafana/loki:3.7.1
+    ports:
+      - "3100:3100"
+    volumes:
+      - loki_data:/loki
+    command: -config.file=/etc/loki/local-config.yaml
+    restart: unless-stopped
+
+  promtail:
+    image: grafana/promtail:3.6
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - ./observability/promtail-config.yml:/etc/promtail/config.yml:ro
+    command: -config.file=/etc/promtail/config.yml
+    depends_on:
+      - loki
+    restart: unless-stopped
+
+  jaeger:
+    image: jaegertracing/jaeger:2.4.0
+    ports:
+      - "16686:16686"
+      - "4317:4317"
+      - "4318:4318"
+    environment:
+      - COLLECTOR_OTLP_ENABLED=true
+    restart: unless-stopped
+
+volumes:
+  es_data:
+  redis_data:
+  static_volume:
+  loki_data:
